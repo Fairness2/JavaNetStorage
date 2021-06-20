@@ -2,17 +2,23 @@ package file_tools;
 
 import lombok.extern.slf4j.Slf4j;
 import models.File;
+import models.FilePart;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Slf4j
 public class FileDirector {
     private String rootPath;
+    private static final int bufferSize = 524288;
 
     public FileDirector(String rootPath) {
         this.rootPath = rootPath;
@@ -115,5 +121,114 @@ public class FileDirector {
             log.error(e.getMessage(), e);
         }
         return false;
+    }
+
+    public void getFileDataParts(String fileName, Consumer<FilePart> callback) {
+        Path path = Paths.get(rootPath + fileName);
+        if (Files.exists(path)) {
+            try(RandomAccessFile accessFile = new RandomAccessFile(rootPath + fileName, "r"); FileChannel inChannel = accessFile.getChannel()) {
+                long size = inChannel.size();
+                long parts = 0;
+                ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+                int i = 1;
+                while(inChannel.read(buffer) > 0)
+                {
+                    buffer.flip();
+                    size = size - buffer.capacity();
+                    byte[] array = buffer.array();
+                    FilePart part = FilePart.builder()
+                            .part(i)
+                            .name(fileName)
+                            .build();
+                    if (size <= 0) {
+                        int currentCapacity = (int) (buffer.capacity() + size);
+                        byte[] endArray = new byte[currentCapacity];
+                        System.arraycopy(array, 0, endArray, 0, currentCapacity);
+                        part.setByteArray(endArray);
+                    }
+                    else {
+                        part.setByteArray(array);
+                    }
+
+                    callback.accept(part);
+                    buffer.clear();
+                    i++;
+                }
+            }
+            catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    public boolean createFile(String fileName) {
+        Path path = Paths.get(rootPath + fileName);
+        boolean res = false;
+        if (!this.fileExists(fileName)) {
+            try {
+                Files.createFile(path);
+                res = true;
+            }
+            catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+
+        return res;
+    }
+
+    public boolean deleteFile(String fileName) {
+        Path path = Paths.get(rootPath + fileName);
+        boolean res = false;
+
+        try {
+            res = Files.deleteIfExists(path);
+        }
+        catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        return res;
+    }
+
+    public boolean setFileDataParts(String fileName, byte[] filePart) {
+        Path path = Paths.get(rootPath + fileName);
+        if (!this.fileExists(fileName)) {
+            if (!this.createFile(fileName)) {
+                return false;
+            }
+        }
+
+        boolean res = false;
+
+        try {
+            Files.write(path, filePart, StandardOpenOption.APPEND);
+            res = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        /*try(RandomAccessFile accessFile = new RandomAccessFile(rootPath + fileName, "rwd"); FileChannel inChannel = accessFile.getChannel()) {
+            ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+            int i = 1;
+            while(inChannel.read(buffer) > 0)
+            {
+                buffer.flip();
+                FilePart part = FilePart.builder()
+                        .part(i)
+                        .countParts(parts)
+                        .byteArray(buffer.array())
+                        .name(fileName)
+                        .build();
+                callback.accept(part);
+                buffer.clear();
+            }
+        }
+        catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }*/
+
+        return res;
     }
 }

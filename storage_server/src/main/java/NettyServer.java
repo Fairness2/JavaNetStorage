@@ -1,5 +1,5 @@
+import handlers.FileHandler;
 import handlers.LoginHandler;
-import handlers.MessageHandler;
 import handlers.SynchronizeHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -28,7 +28,8 @@ public class NettyServer {
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
                                     new LoginHandler(),
-                                    new SynchronizeHandler()
+                                    new SynchronizeHandler(),
+                                    new FileHandler()
                             );
                         }
                     });

@@ -30,7 +30,7 @@ public class SynchronizeHandler extends SimpleChannelInboundHandler<SynchronizeR
                         .build();
             }
             else {
-                String directory = String.valueOf(findUser.getId()) + (synchronizeRequest.getPath() == null ? "" : synchronizeRequest.getPath());
+                String directory = String.valueOf(findUser.getId()) + '/' + (synchronizeRequest.getPath() == null ? "" : synchronizeRequest.getPath());
                 FileDirector fileDirector = new FileDirector(ApplicationStore.ROOT_PATH);
 
                 if (!fileDirector.isDirectory(String.valueOf(findUser.getId()))) {
