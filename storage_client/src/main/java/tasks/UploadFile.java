@@ -17,7 +17,6 @@ public class UploadFile extends Task<File> {
     private final FileDirector fileDirector;
     private final String serverPath;
     private final NetConnector localNetwork;
-    private Object monitor;
 
 
     public UploadFile(File uploadFile, String serverPath) {
@@ -25,7 +24,6 @@ public class UploadFile extends Task<File> {
         this.fileDirector = new FileDirector(uploadFile.getPath() + '/');
         this.serverPath = serverPath;
         localNetwork = NetConnector.getInstance();
-        monitor = new Object();
         ApplicationStore.fileCallback = (TransmittedSignal message) -> {
             synchronized (this) {
                 try {
@@ -47,13 +45,15 @@ public class UploadFile extends Task<File> {
             synchronized (this) {
                 part.setPath(serverPath);
                 part.setUser(ApplicationStore.user);
-                part.setUuid(UUID.randomUUID().toString());
+                part.setUuid(UUID.randomUUID());
                 localNetwork.sendSignal(part);
                 this.updateProgress(part.getPart(), part.getCountParts());
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    log.error(e.getMessage(), e);
+                if (!part.isLast()) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        log.error(e.getMessage(), e);
+                    }
                 }
             }
 

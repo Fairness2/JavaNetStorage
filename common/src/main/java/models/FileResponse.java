@@ -4,10 +4,11 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
 public class FileResponse implements TransmittedSignal {
-    private String uuid;
+    private UUID uuid;
     private boolean status;
 }

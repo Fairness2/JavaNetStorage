@@ -2,6 +2,7 @@ package network;
 
 import callbacks.Callback;
 import handlers.FileHandler;
+import handlers.FilePartHandler;
 import handlers.MessageHandler;
 import handlers.SignalHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -44,6 +45,7 @@ public class NetConnector implements Runnable {
                                     new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ObjectEncoder(),
                                     new FileHandler(),
+                                    new FilePartHandler(),
                                     new SignalHandler()
                             );
                         }

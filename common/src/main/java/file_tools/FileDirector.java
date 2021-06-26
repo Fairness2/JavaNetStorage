@@ -128,7 +128,7 @@ public class FileDirector {
         if (Files.exists(path)) {
             try(RandomAccessFile accessFile = new RandomAccessFile(rootPath + fileName, "r"); FileChannel inChannel = accessFile.getChannel()) {
                 long size = inChannel.size();
-                long parts = 0;
+                int parts = (int) (inChannel.size() / bufferSize);
                 ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
                 int i = 1;
                 while(inChannel.read(buffer) > 0)
@@ -138,6 +138,7 @@ public class FileDirector {
                     byte[] array = buffer.array();
                     FilePart part = FilePart.builder()
                             .part(i)
+                            .countParts(parts)
                             .name(fileName)
                             .build();
                     if (size <= 0) {
@@ -145,6 +146,7 @@ public class FileDirector {
                         byte[] endArray = new byte[currentCapacity];
                         System.arraycopy(array, 0, endArray, 0, currentCapacity);
                         part.setByteArray(endArray);
+                        part.setLast(true);
                     }
                     else {
                         part.setByteArray(array);
@@ -198,36 +200,13 @@ public class FileDirector {
                 return false;
             }
         }
-
         boolean res = false;
-
         try {
             Files.write(path, filePart, StandardOpenOption.APPEND);
             res = true;
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        /*try(RandomAccessFile accessFile = new RandomAccessFile(rootPath + fileName, "rwd"); FileChannel inChannel = accessFile.getChannel()) {
-            ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-            int i = 1;
-            while(inChannel.read(buffer) > 0)
-            {
-                buffer.flip();
-                FilePart part = FilePart.builder()
-                        .part(i)
-                        .countParts(parts)
-                        .byteArray(buffer.array())
-                        .name(fileName)
-                        .build();
-                callback.accept(part);
-                buffer.clear();
-            }
-        }
-        catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }*/
 
         return res;
     }

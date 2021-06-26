@@ -4,6 +4,7 @@ import callbacks.Callback;
 import file_tools.FileDirector;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -20,6 +21,7 @@ import javafx.stage.DirectoryChooser;
 import models.*;
 import network.NetConnector;
 import store.ApplicationStore;
+import tasks.DownloadFile;
 import tasks.UploadFile;
 import view_components.ListItem;
 
@@ -32,6 +34,7 @@ public class ClientController implements Initializable {
     public Label progressLabel;
     private boolean isLoad = false;
     private String serverPath;
+    private String clientPath;
 
     private Callback getCallback() {
         return signal -> {
@@ -79,11 +82,13 @@ public class ClientController implements Initializable {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             selectedDirectory = directoryChooser.showDialog(null);
         } while (selectedDirectory == null);
+        clientPath = selectedDirectory.getAbsolutePath();
         if (fileDirector == null) {
-            fileDirector = new FileDirector(selectedDirectory.getAbsolutePath() + "/");
+
+            fileDirector = new FileDirector(clientPath + "/");
         }
         else {
-            fileDirector.setRootPath(selectedDirectory.getAbsolutePath() + "/");
+            fileDirector.setRootPath(clientPath + "/");
         }
         this.refreshFileList(null);
     }
@@ -127,37 +132,69 @@ public class ClientController implements Initializable {
         else {
             if (fileDirector.fileExists(selectedFile.getName())) {
                 UploadFile task = new UploadFile(selectedFile, serverPath);
-                progressBar.progressProperty().unbind();
-                progressBar.progressProperty().bind(task.progressProperty());
-                progressLabel.textProperty().unbind();
-                progressLabel.textProperty().bind(task.messageProperty());
-
-                // When completed tasks
-                task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, (WorkerStateEvent t) -> {
-                    synchronise(null);
-                    progressLabel.textProperty().unbind();
-                    progressLabel.setVisible(false);
-                    progressBar.setVisible(false);
-                    isLoad = false;
-                    showNotify("Файл скопирован", AlertType.CONFIRMATION);
-                });
-
-                task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent t) -> {
-                    progressLabel.textProperty().unbind();
-                    progressLabel.setVisible(false);
-                    progressBar.setVisible(false);
-                    isLoad = false;
-                    showNotify("Произошла ошибка", AlertType.ERROR);
-                });
-
-                isLoad = true;
-                new Thread(task).start();
+                taskStart(task);
             }
             else {
                 showNotify("Файл не существует", AlertType.ERROR);
             }
         }
 
+    }
+
+    public void downloadFile(ActionEvent event) {
+        if (isLoad) {
+            showNotify("Процесс загрузки уже идёт", AlertType.INFORMATION);
+            return;
+        }
+
+        ObservableList<File> oList = serverListView.getSelectionModel().getSelectedItems();
+        if (oList.size() == 0) {
+            showNotify("Выберите файл", AlertType.WARNING);
+            return;
+        }
+
+        File selectedFile = oList.get(0);
+        progressBar.setVisible(true);
+        progressBar.setProgress(0);
+        progressLabel.setVisible(true);
+        //progressLabel.setText(String.format("Отправка: %s", selectedFile.getName()));
+        if (fileDirector.isDirectory(selectedFile.getName())) {
+            //TODO
+        }
+        else {
+            DownloadFile task = new DownloadFile(selectedFile, clientPath);
+            taskStart(task);
+        }
+
+    }
+
+    private void taskStart(Task<File> task) {
+        progressBar.progressProperty().unbind();
+        progressBar.progressProperty().bind(task.progressProperty());
+        progressLabel.textProperty().unbind();
+        progressLabel.textProperty().bind(task.messageProperty());
+
+        // When completed tasks
+        task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, (WorkerStateEvent t) -> {
+            refreshFileList(null);
+            synchronise(null);
+            progressLabel.textProperty().unbind();
+            progressLabel.setVisible(false);
+            progressBar.setVisible(false);
+            isLoad = false;
+            showNotify("Файл скопирован", AlertType.CONFIRMATION);
+        });
+
+        task.addEventHandler(WorkerStateEvent.WORKER_STATE_FAILED, (WorkerStateEvent t) -> {
+            progressLabel.textProperty().unbind();
+            progressLabel.setVisible(false);
+            progressBar.setVisible(false);
+            isLoad = false;
+            showNotify("Произошла ошибка", AlertType.ERROR);
+        });
+
+        isLoad = true;
+        new Thread(task).start();
     }
 
 
