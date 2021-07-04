@@ -58,4 +58,23 @@ public class UserDBManager {
             return null;
         }
     }
+
+    /**
+     * Получение пользователя по логину
+     */
+    public User findByLogin(String login) {
+        try {
+            PreparedStatement ps = connector.getConnection().prepareStatement("SELECT * FROM user WHERE login = ?");
+            ps.setString(1, login);
+            ResultSet res = ps.executeQuery();
+            if (res.next()) {
+                return new User(res.getString("login"), res.getString("name"), res.getInt("id"));
+            }
+            return null;
+        }
+        catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
+    }
 }

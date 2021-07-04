@@ -19,6 +19,9 @@ import java.util.function.Consumer;
 public class FileDirector {
     private String rootPath;
     private static final int bufferSize = 524288;
+    private Thread watchThread;
+    private Consumer<WatchEvent<?>> watchKeyConsumer;
+    private WatchService watchService;
 
     public FileDirector(String rootPath) {
         this.rootPath = rootPath;
@@ -210,4 +213,68 @@ public class FileDirector {
 
         return res;
     }
+
+    public String getAbsolutePath(String fileName) {
+        Path path = Paths.get(rootPath + fileName);
+        return path.toAbsolutePath().toString();
+    }
+
+    public boolean updateFileName(String fileName, String newName) {
+        Path path = Paths.get(rootPath + fileName);
+        boolean res = false;
+
+        try {
+            path = Files.move(path, path.resolveSibling(newName));
+            res = true;
+        }
+        catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        return res;
+    }
+
+    public WatchKey registerWatcher(String directoryPath) {
+        try {
+            if (watchService == null) {
+                watchService = FileSystems.getDefault().newWatchService();
+            }
+            Path path = Paths.get(rootPath + directoryPath);
+            WatchKey key = path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+
+            if (watchThread == null || !watchThread.isAlive()) {
+                watchThread = new Thread(() -> {
+                    WatchKey currentKey;
+                    try {
+                        while ((currentKey = watchService.take()) != null) {
+                            for (WatchEvent<?> event : currentKey.pollEvents()) {
+                                if (watchKeyConsumer != null) {
+                                    watchKeyConsumer.accept(event);
+                                }
+                            }
+                            currentKey.reset();
+                        }
+                    } catch (InterruptedException e) {
+                        log.error(e.getMessage(), e);
+                    }
+                });
+                watchThread.setDaemon(true);
+                watchThread.start();
+            }
+            return key;
+
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public void setWatchKeyConsumer(Consumer<WatchEvent<?>> consumer) {
+        this.watchKeyConsumer = consumer;
+    }
+
+    public void closeKey(WatchKey key) {
+        key.cancel();
+    }
+
 }

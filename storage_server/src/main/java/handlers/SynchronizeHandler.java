@@ -1,7 +1,9 @@
 package handlers;
 
+import database.FileDBManager;
 import database.UserDBManager;
 import file_tools.FileDirector;
+import helpers.Helpers;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,7 @@ import store.ApplicationStore;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
+import java.util.List;
 
 @Slf4j
 public class SynchronizeHandler extends SimpleChannelInboundHandler<SynchronizeRequest> {
@@ -30,16 +33,16 @@ public class SynchronizeHandler extends SimpleChannelInboundHandler<SynchronizeR
                         .build();
             }
             else {
-                String directory = String.valueOf(findUser.getId()) + '/' + (synchronizeRequest.getPath() == null ? "" : synchronizeRequest.getPath());
                 FileDirector fileDirector = new FileDirector(ApplicationStore.ROOT_PATH);
-
                 if (!fileDirector.isDirectory(String.valueOf(findUser.getId()))) {
                     fileDirector.createDirectory(String.valueOf(findUser.getId()));
                 }
+                String directory = synchronizeRequest.getPath() == null ? (ApplicationStore.ROOT_PATH + findUser.getId()) : (synchronizeRequest.getPath());
+                fileDirector.setRootPath(directory + '/');
 
-                if (fileDirector.fileExists(directory)) {
+                if (fileDirector.fileExists("")) {
+                    LinkedList<File> fileList = (LinkedList<File>) Helpers.mergeSharedFile(fileDirector.getFilesInDirectory(""), directory, user.getId());
 
-                    LinkedList<File> fileList = fileDirector.getFilesInDirectory(directory);
                     answer = StandardAnswer.builder()
                             .success(true)
                             .param(

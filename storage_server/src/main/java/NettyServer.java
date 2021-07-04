@@ -13,11 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NettyServer {
     public NettyServer() {
-        EventLoopGroup auth = new NioEventLoopGroup();
+        //EventLoopGroup auth = new NioEventLoopGroup();
         EventLoopGroup worker = new NioEventLoopGroup();
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(auth, worker)
+            serverBootstrap.group(worker)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
@@ -29,7 +29,13 @@ public class NettyServer {
                                     new SynchronizeHandler(),
                                     new FileHandler(),
                                     new FileRequestHandler(),
-                                    new FileResponseHandler()
+                                    new FileResponseHandler(),
+                                    new FileCreateHandler(),
+                                    new FileDeleteHandler(),
+                                    new FileUpdateHandler(),
+                                    new SynchronizeSharedFilesHandler(),
+                                    new ShareFileHandler(),
+                                    new DeleteSharedFileHandler()
                             );
                         }
                     });
@@ -41,7 +47,7 @@ public class NettyServer {
             log.error(e.getMessage(), e);
         }
         finally {
-            auth.shutdownGracefully();
+            //auth.shutdownGracefully();
             worker.shutdownGracefully();
         }
     }

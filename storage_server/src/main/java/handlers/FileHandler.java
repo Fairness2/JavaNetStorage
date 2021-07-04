@@ -14,8 +14,8 @@ public class FileHandler extends SimpleChannelInboundHandler<FilePart> {
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, FilePart filePartRequest) throws Exception {
         FileResponse answer;
 
-        String directory = String.valueOf(filePartRequest.getUser().getId()) + '/' + (filePartRequest.getPath() == null ? "" : filePartRequest.getPath());
-        FileDirector fileDirector = new FileDirector(ApplicationStore.ROOT_PATH + directory);
+        String directory = filePartRequest.getPath() == null ? (ApplicationStore.ROOT_PATH + filePartRequest.getUser().getId()) : (filePartRequest.getPath());
+        FileDirector fileDirector = new FileDirector(directory + "/");
 
         boolean res;
         if (filePartRequest.getPart() == 1) {

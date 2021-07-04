@@ -17,7 +17,9 @@ public class ListItem extends ListCell<File> {
             setGraphic(null);
             setText(null);
         } else {
-            Path path = Paths.get(ApplicationStore.ROOT_PATH + (item.getType().equals(File.DIR_TYPE) ? "icons/folder.png" : "icons/file.png"));
+            Path path = Paths.get(ApplicationStore.ROOT_PATH + (item.getType().equals(File.DIR_TYPE)
+                    ? item.isShared() ? "icons/folder-account.png" : "icons/folder.png"
+                    : item.isShared() ? "icons/file-account.png" : "icons/file.png"));
             path.toAbsolutePath().toUri();
             Image fxImage = new Image(path.toAbsolutePath().toUri().toString());
             ImageView imageView = new ImageView(fxImage);
