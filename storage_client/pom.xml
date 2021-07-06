@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>storage_server</artifactId>
+    <artifactId>storage_client</artifactId>
 
     <properties>
         <maven.compiler.source>15</maven.compiler.source>
@@ -17,11 +17,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.21</version>
-        </dependency>
         <dependency>
             <groupId>org.example</groupId>
             <artifactId>common</artifactId>
