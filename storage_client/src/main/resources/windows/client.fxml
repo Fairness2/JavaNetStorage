@@ -46,7 +46,7 @@
        </Menu>
      </menus>
    </MenuBar>
-   <Button layoutX="654.0" layoutY="12.0" mnemonicParsing="false" text="Выход" />
+   <Button layoutX="654.0" layoutY="12.0" mnemonicParsing="false" onAction="#logout" text="Выход" />
    <ProgressBar fx:id="progressBar" layoutX="260.0" layoutY="533.0" prefWidth="200.0" progress="0.0" visible="false" />
    <Label fx:id="progressLabel" alignment="TOP_CENTER" contentDisplay="TOP" layoutX="260.0" layoutY="559.0" prefHeight="60.0" prefWidth="200.0" text="Label" textAlignment="CENTER" visible="false" wrapText="true" />
    <Button layoutX="282.0" layoutY="25.0" mnemonicParsing="false" onAction="#onReturnClientList" text="Назад" />

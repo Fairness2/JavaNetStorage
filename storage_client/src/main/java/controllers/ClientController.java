@@ -7,7 +7,10 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 
@@ -19,6 +22,8 @@ import java.util.ResourceBundle;
 
 import javafx.scene.input.MouseEvent;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
 import models.*;
 import network.NetConnector;
 import store.ApplicationStore;
@@ -26,6 +31,7 @@ import tasks.DownloadFile;
 import tasks.UploadFile;
 import view_components.ListItem;
 
+@Slf4j
 public class ClientController implements Initializable {
     public ListView<File> clientListView;
     public ListView<File> serverListView;
@@ -44,6 +50,7 @@ public class ClientController implements Initializable {
     public Button serverBackButton;
 
     private WatchKey currentKey;
+
 
     private Callback getCallback() {
         return signal -> {
@@ -117,7 +124,8 @@ public class ClientController implements Initializable {
 
     public void refreshFileList(ActionEvent event) {
         if (fileDirector == null) {
-            return; //TODO
+            showNotify("Ошибка файлового менеджера", AlertType.WARNING);
+            return;
         }
         clientListView.getItems().clear();
         fileDirector.getFilesInDirectory("")
@@ -145,7 +153,7 @@ public class ClientController implements Initializable {
 
         File selectedFile = oList.get(0);
         if (fileDirector.isDirectory(selectedFile.getName())) {
-            //TODO
+            showNotify("нельзя отправить папку", AlertType.WARNING);//TODO
         }
         else {
             if (fileDirector.fileExists(selectedFile.getName())) {
@@ -173,7 +181,7 @@ public class ClientController implements Initializable {
 
         File selectedFile = oList.get(0);
         if (fileDirector.isDirectory(selectedFile.getName())) {
-            //TODO
+            showNotify("нельзя скачать папку", AlertType.WARNING); //TODO
         }
         else {
             DownloadFile task = new DownloadFile(selectedFile, clientPath);
@@ -255,7 +263,7 @@ public class ClientController implements Initializable {
         }
         else {
             clientPath = newPath;
-            fileDirector.setRootPath(clientPath);
+            fileDirector.setRootPath(clientPath + "/");
 
             fileDirector.closeKey(currentKey);
             currentKey = fileDirector.registerWatcher("");
@@ -527,6 +535,22 @@ public class ClientController implements Initializable {
                 .build();
 
         network.sendSignal(deleteSharedFile);
+    }
+
+    public void logout(ActionEvent event) {
+        Stage currentStage = (Stage)((Node) event.getSource()).getScene().getWindow();
+        ApplicationStore.user = null;
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            fxmlLoader.setLocation(getClass().getResource("/windows/login.fxml"));
+            Stage stage = new Stage();
+            stage.setTitle("Сетевое хранилище");
+            stage.setScene(new Scene(fxmlLoader.load()));
+            stage.show();
+            currentStage.close();
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
 }

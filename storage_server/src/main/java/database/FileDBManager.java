@@ -29,7 +29,7 @@ public class FileDBManager {
     public List<File> getSharedFiles(int userId) {
         ArrayList<File> list = new ArrayList<>();
         try {
-            PreparedStatement ps = connector.getConnection().prepareStatement("SELECT sf.id AS id, sf.name AS name, sf.path AS path, sf.owner_id AS owner_id FROM ref_shared_file_user ref, shared_file sf WHERE ref.user_id = ?");
+            PreparedStatement ps = connector.getConnection().prepareStatement("SELECT sf.id AS id, sf.name AS name, sf.path AS path, sf.owner_id AS owner_id FROM ref_shared_file_user ref, shared_file sf WHERE ref.user_id = ? AND sf.id = ref.file_id");
             ps.setInt(1, userId);
             ResultSet res = ps.executeQuery();
 
